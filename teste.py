@@ -3,14 +3,56 @@ import random
 import time
 import json # Adicionado para melhor visualização do JSON
 import datetime
+from Client import SaferRequets
 
+
+
+
+
+
+
+bancos_ispb = {
+    "Agibank": "01330382",
+    "Banco do Brasil": "00000000",
+    "Banco da Amazônia": "00000208",
+    "Banco do Nordeste": "00000236",
+    "Banco Bradesco": "60746948",
+    "Itaú Unibanco": "60701190",
+    "Santander": "90400888",
+    "Caixa Econômica Federal": "00360305",
+    "Banco Safra": "58160789",
+    "Banco BTG Pactual": "30306294",
+    "Banco Inter": "00416968",
+    "Nubank": "18236120",
+    "Banco Original": "92894922",
+    "Banco Pan": "62331228",
+    "Banco C6": "31872495",
+    "Banco Modal": "30723886",
+    "Banco Votorantim (BV)": "59588111",
+    "Banco Daycoval": "62232889",
+    "Banco Sofisa": "60889128",
+    "Banco XP": "33264668",
+    "Banco BS2": "07192329",
+    "Banco Topázio": "07117473"
+}
+
+
+
+
+@st.cache_data(ttl=500)
+def loadClients():
+    ContasCliente = SaferRequets.getAllAccounts()
+    clientes = SaferRequets.formatarClientes(ContasCliente)
+    return clientes
+
+clientes = loadClients()
 
 DESTINATIONS_DATA = {
-    "Luan": ["000.222.333.44", "452", "chavePixLuan"], 
-    "Henrique": ["555.323.333.44", "452", "chavePixHenrique"],
-    "Pietra": ["111.222.333.44", "492", "chavePixPietra"],
-    "Michel": ["333.888.333.44", "492", "chavePixMichel"],
-    "João": ["111.444.333.44", "892", "chavePixJoao"]
+    "Luan": {"conta": "000.222.333.44", "agencia": "452", "pix_key": "chavePixLuan", "ispb_destino":bancos_ispb["Agibank"],"cpf":"55845"}, 
+    "Henrique": {"conta": "555.323.333.44", "agencia": "452", "pix_key": "chavePixHenrique","ispb_destino":bancos_ispb["Nubank"],"cpf":"55845"},
+    "Pietra": {"conta": "111.222.333.44", "agencia": "492", "pix_key": "chavePixPietra","ispb_destino":bancos_ispb["Santander"],"cpf":"55845"},
+    "Michel": {"conta": "333.888.333.44", "agencia": "492", "pix_key": "chavePixMichel","ispb_destino":bancos_ispb["Itaú Unibanco"],"cpf":"55845"},
+    "João": {"conta": "111.444.333.44", "agencia": "892", "pix_key": "chavePixJoao","ispb_destino":bancos_ispb["Banco XP"],"cpf":"55845"}
 }
 estados_brasil = {
     "Acre": {"latitude": -9.97499, "longitude": -67.8243},            # Rio Branco
@@ -43,6 +85,9 @@ estados_brasil = {
 }
 
 
+if "pix_meta" not in st.session_state:
+    st.session_state["pix_meta"] = {"meioPagamento": "pix"}
+
 def delta_button_method():
     """
     Cria o popover de metadados para configuração do Payload da API.
@@ -55,46 +100,41 @@ def delta_button_method():
         hora = st.time_input(label="Horário da transação:",value=datetime.time(12,0), key="meta_hora").strftime("%H:%M:%S")
         local = st.selectbox(label="Local da transação: ", options=estados_brasil.keys(),placeholder="Selecione o estado de origem",)
         st.subheader("Dispositivo")
-        device_id = st.text_input("Device ID", value="1234567890", placeholder="ID único do dispositivo", key="meta_device_id")
-        modelo_dispositivo = st.text_input("Modelo do dispositivo", value="iPhone 14", placeholder="Ex: Samsung S22", key="meta_modelo_dispositivo")
-        data_cadastro = st.text_input("Data de cadastro", value="2023-01-15", placeholder="AAAA-MM-DD", key="meta_data_cadastro")
-
+        dispositivo = st.selectbox("Modelo do dispositivo", options=["MOBILE","DESKTOP","AUTO_ATENDIMENTO"], key="meta_modelo_dispositivo")
+        
         st.subheader("Remetente")
-        n_conta_remetente = st.text_input("Conta Remetente", value="12345-6", placeholder="Número da conta", key="meta_conta_remetente")
-        n_agencia_remetente = st.text_input("Agência Remetente", value="1234", placeholder="Número da agência", key="meta_agencia_remetente")
-        nome_remetente = st.text_input("Nome Remetente", value="João da Silva", placeholder="Nome completo", key="meta_nome_remetente")
-        cpf_remetente = st.text_input("CPF Remetente", value="123.456.789-00", placeholder="Ex: 123.456.789-00", key="meta_cpf_remetente")
-        data_criacao_conta = st.text_input("Data Criação Conta", value="2020-05-10", placeholder="AAAA-MM-DD", key="meta_data_criacao_conta")
-        limite_noturno = st.text_input("Limite Noturno", value="5000.00", placeholder="Ex: 5000.00", key="meta_limite_noturno")
+        cliente = st.selectbox("Cliente remetente",key="cliente_remetente",options=clientes.keys())
+        with st.expander(f"Dados de {cliente}"):
+                st.success(f"""
+                           Nº conta: {clientes[cliente]["numConta"]}\n
+                           Agencia: {clientes[cliente]["numAgencia"]}\n
+                           Chave: {clientes[cliente]["ispb"]}""")
 
         st.subheader("Destinatário")
-        n_conta_destinatario = st.text_input("Conta Destinatário", value="65432-1", placeholder="Número da conta", key="meta_conta_destinatario")
-        n_agencia_destinatario = st.text_input("Agência Destinatário", value="4321", placeholder="Número da agência", key="meta_agencia_destinatario")
-        ispb_destino = st.text_input("ISPB Destino", value="12345678", placeholder="Código ISPB do banco", key="meta_ispb_destino")
+        destinatario = st.selectbox(label="Digite a chave pix: ", options=DESTINATIONS_DATA.keys(), key="destination_key")
 
         # O botão Salvar Metadados não precisa de uma chave aleatória se for único dentro do popover
         if st.button("Salvar Metadados", key="salvar_metadados_btn"):
             st.session_state.clear()
             st.session_state["pix_meta"] = {
-                "data_hora": data + "T" + hora,
-                "latitude": estados_brasil[local]["latitude"],
-                "longitude": estados_brasil[local]["longitude"],
-                "device_id": device_id,
-                "modelo_dispositivo": modelo_dispositivo,
-                "data_cadastro": data_cadastro,
-                "n_conta_remetente": n_conta_remetente,
-                "n_agencia_remetente": n_agencia_remetente,
-                "nome_remetente": nome_remetente,
-                "cpf_remetente": cpf_remetente,
-                "data_criacao_conta": data_criacao_conta,
-                "limite_noturno": limite_noturno,
-                "n_conta_destinatario": n_conta_destinatario,
-                "n_agencia_destinatario": n_agencia_destinatario,
-                "ispb_destino": ispb_destino
+                "dataHoraOperacao": data + "T" + hora,
+                #Longitude - latitude
+                "local": [estados_brasil[local]["longitude"],estados_brasil[local]["latitude"]],
+                "dispositivo": dispositivo,
+                "numContaOrigem": clientes[cliente]["numConta"],
+                "numAgenciaOrigem": clientes[cliente]["numAgencia"],
+                "ispbOrigem": clientes[cliente]["ispb"],
+                "cpfOrigem": clientes[cliente]["cpf"],
+                "numContaDestino": DESTINATIONS_DATA[destinatario]["conta"],
+                "numAgenciaDestino": DESTINATIONS_DATA[destinatario]["agencia"],
+                "ispbDestino": DESTINATIONS_DATA[destinatario]["ispb_destino"],
+                "cpfCnpjDestino": DESTINATIONS_DATA[destinatario]["cpf"],
+                "meioPagamento": "pix"
+            
             }
 
             
-            st.write(st.session_state)
+            st.write(st.session_state["pix_meta"])
             st.success("✅ Metadados salvos com sucesso!")
 
 
@@ -115,18 +155,25 @@ def create_destinations_container(destinations_data):
     """Cria o container para seleção do destinatário (chave Pix e contatos frequentes)."""
     with st.container(border=True):
         # CHAVE FIXA para acesso: st.session_state["pix_key_input"]
-        chave_pix = st.text_input(label="Digite a chave pix: ", placeholder="CPF / CNPJ / TELEFONE / ALEATÓRIA", key="pix_key_input")
+        chaves = []
+        for contato in destinations_data.values():
+            chaves.append(contato["pix_key"])
+        chave_pix = st.selectbox(label="Digite a chave pix: ", options=chaves, key="pix_key_input")
 
         # CHAVE FIXA para acesso: st.session_state["contact_pill"]
         contato = st.pills(label="Contatos frequentes: ", options=destinations_data.keys(), key="contact_pill")
 
         # Exibir dados do contato selecionado
         if contato:
+            st.session_state["pix_meta"]["numContaDestino"] = destinations_data[contato]["conta"]
+            st.session_state["pix_meta"]["numAgenciaDestino"] = destinations_data[contato]["agencia"]
+            st.session_state["pix_meta"]["ispbDestino"] = destinations_data[contato]["ispb_destino"]
+            st.session_state["pix_meta"]["cpfCnpjDestino"] = destinations_data[contato]["cpf"]
             with st.expander(f"Dados do contato selecionado: {contato}"):
                 st.success(f"""
-                           Nº conta: {destinations_data[contato][0]}\n
-                           Agencia: {destinations_data[contato][1]}\n
-                           Chave:: {destinations_data[contato][2]}""")
+                           Nº conta: {destinations_data[contato]["conta"]}\n
+                           Agencia: {destinations_data[contato]["agencia"]}\n
+                           Chave: {destinations_data[contato]["pix_key"]}""")
 
         # CHAVE FIXA para acesso: st.session_state["description_input"]
         st.text_input("Descrição (Opcional)",
@@ -136,74 +183,74 @@ def create_destinations_container(destinations_data):
 
 @st.dialog(title="Processando pagamento", width="large")
 def processing_dialog():
-    """
-    Exibe um diálogo de processamento com resultado aleatório (sucesso/falha).
-    Acessa e exibe os valores dos inputs via st.session_state.
-    """
-    # --- Acesso aos valores dos Inputs ---
-    # Usamos .get para retornar um valor padrão caso a chave ainda não exista na session_state
-    valor_pix = st.session_state.get("pix_value", 0.0)
-   # st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value",0.0)
-    st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value", 0.0)
-    chave_pix_digitada = st.session_state.get("pix_key_input", "Não preenchida")
-    contato_selecionado = st.session_state.get("contact_pill")
-    descricao = st.session_state.get("description_input", "Nenhuma")
-    metadados = st.session_state.get("pix_meta", "Metadados não salvos")
+    if st.session_state.get("pix_value") > 0 and st.session_state.get("pix_key_input") != None:
+        SaferRequets.sendRequest(st.session_state)
+        # --- Acesso aos valores dos Inputs ---
+        # Usamos .get para retornar um valor padrão caso a chave ainda não exista na session_state
+        valor_pix = st.session_state.get("pix_value", 0.0)
+        # st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value",0.0)
+        st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value", 0.0)
+        chave_pix_digitada = st.session_state.get("pix_key_input", "Não preenchida")
+        contato_selecionado = st.session_state.get("contact_pill")
+        descricao = st.session_state.get("description_input", "Nenhuma")
+        metadados = st.session_state.get("pix_meta", "Metadados não salvos")
 
-    # Determina a chave de destino final
-    chave_final = chave_pix_digitada
-    if contato_selecionado:
-        # Pega a chave real do contato selecionado do dicionário DESTINATIONS_DATA
-        chave_final = DESTINATIONS_DATA[contato_selecionado][2]
+        # Determina a chave de destino final
+        chave_final = chave_pix_digitada
+        if contato_selecionado:
+            # Pega a chave real do contato selecionado do dicionário DESTINATIONS_DATA
+            chave_final = DESTINATIONS_DATA[contato_selecionado]["pix_key"]
 
-    st.subheader("Dados da Transação Coletados")
-    st.markdown(f"""
-        - **Valor:** R$ {valor_pix:.2f}
-        - **Destinatário:** {contato_selecionado if contato_selecionado else "Via Chave Digitada"}
-        - **Chave de Destino (Para Envio):** `{chave_final}`
-        - **Descrição:** {descricao}
-    """)
-    
-    #st.subheader("Metadados (Payload API)")
-    #if isinstance(metadados, dict):
-    #    st.json(metadados)
-    #else:
-     #   st.warning("Metadados não configurados. Clique em 🛠 e 'Salvar Metadados'.")
-    
-    st.markdown("---")
-    
-    with st.spinner("Aguarde, estamos processando...", show_time=True):
-        time.sleep(3)  # Simula o tempo de processamento
+        st.subheader("Dados da Transação Coletados")
+        st.markdown(f"""
+            - **Valor:** R$ {valor_pix:.2f}
+            - **Destinatário:** {contato_selecionado if contato_selecionado else "Via Chave Digitada"}
+            - **Chave de Destino (Para Envio):** `{chave_final}`
+            - **Descrição:** {descricao}
+        """)
 
-    numero = random.randint(1, 100)
+        #st.subheader("Metadados (Payload API)")
+        #if isinstance(metadados, dict):
+        #    st.json(metadados)
+        #else:
+            #   st.warning("Metadados não configurados. Clique em 🛠 e 'Salvar Metadados'.")
 
-    if numero % 2 == 0:
-        st.success("Transação aceita com sucesso! 🎉")
-        st.markdown(
-            """
-            <div style="text-align: center; font-size: 100px; color: green; margin-top: 20px;">
-                ✔
-            </div>
-            <div style="text-align: center; font-size: 36px; color: green; font-weight: bold;">
-                Transação Aceita!
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.markdown("---")
+
+        with st.spinner("Aguarde, estamos processando...", show_time=True):
+            time.sleep(3)  # Simula o tempo de processamento
+
+        numero = random.randint(1, 100)
+
+        if numero % 2 == 0:
+            st.success("Transação aceita com sucesso! 🎉")
+            st.markdown(
+                """
+                <div style="text-align: center; font-size: 100px; color: green; margin-top: 20px;">
+                    ✔
+                </div>
+                <div style="text-align: center; font-size: 36px; color: green; font-weight: bold;">
+                    Transação Aceita!
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.error("Transação negada. ❌")
+            st.markdown(
+                """
+                <div style="text-align: center; font-size: 100px; color: red; margin-top: 20px;">
+                    ❌
+                </div>
+                <div style="text-align: center; font-size: 36px; color: red; font-weight: bold;">
+                    Transação Negada!
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        st.write(st.session_state["pix_meta"])
     else:
-        st.error("Transação negada. ❌")
-        st.markdown(
-            """
-            <div style="text-align: center; font-size: 100px; color: red; margin-top: 20px;">
-                ❌
-            </div>
-            <div style="text-align: center; font-size: 36px; color: red; font-weight: bold;">
-                Transação Negada!
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    st.write(st.session_state)
+        st.warning("Digite o valor da transação!")
 
 def construct_pix_page(destinations_data):
     """
@@ -223,6 +270,9 @@ def construct_pix_page(destinations_data):
         create_destinations_container(destinations_data)
 
 # --- Configuração e Execução Principal do Streamlit (main) ---
+
+
+
 
 def main():
     """
