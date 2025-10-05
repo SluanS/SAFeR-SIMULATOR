@@ -7,10 +7,6 @@ from Client import SaferRequets
 
 
 
-
-
-
-
 bancos_ispb = {
     "Agibank": "01330382",
     "Banco do Brasil": "00000000",
@@ -96,7 +92,7 @@ def delta_button_method():
     with st.popover("🛠"):
         st.subheader("PayLoad API")
         # Foi necessário usar chaves fixas ou o valor do input em si para evitar o erro de 'key must be unique'
-        data = st.date_input(label="Data da transação", format="DD/MM/YYYY", value="2025-10-04", max_value="today",key="meta_data_hora",min_value=datetime.date(2000, 1, 1)).strftime("%m/%d/%Y")
+        data = st.date_input(label="Data da transação", format="DD/MM/YYYY", value="2025-10-04", max_value="today",key="meta_data_hora",min_value=datetime.date(2000, 1, 1)).strftime("%Y-%m-%d")
         hora = st.time_input(label="Horário da transação:",value=datetime.time(12,0), key="meta_hora").strftime("%H:%M:%S")
         local = st.selectbox(label="Local da transação: ", options=estados_brasil.keys(),placeholder="Selecione o estado de origem",)
         st.subheader("Dispositivo")
@@ -129,7 +125,7 @@ def delta_button_method():
                 "numAgenciaDestino": DESTINATIONS_DATA[destinatario]["agencia"],
                 "ispbDestino": DESTINATIONS_DATA[destinatario]["ispb_destino"],
                 "cpfCnpjDestino": DESTINATIONS_DATA[destinatario]["cpf"],
-                "meioPagamento": "pix"
+                "meioPagamento": "PIX",
             
             }
 
@@ -184,12 +180,12 @@ def create_destinations_container(destinations_data):
 @st.dialog(title="Processando pagamento", width="large")
 def processing_dialog():
     if st.session_state.get("pix_value") > 0 and st.session_state.get("pix_key_input") != None:
-        SaferRequets.sendRequest(st.session_state)
-        # --- Acesso aos valores dos Inputs ---
-        # Usamos .get para retornar um valor padrão caso a chave ainda não exista na session_state
-        valor_pix = st.session_state.get("pix_value", 0.0)
-        # st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value",0.0)
         st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value", 0.0)
+        valor_pix = st.session_state.get("pix_value", 0.0)
+        payload = st.session_state["pix_meta"]
+        SaferRequets.sendRequest(payload)
+        # st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value",0.0)
+        
         chave_pix_digitada = st.session_state.get("pix_key_input", "Não preenchida")
         contato_selecionado = st.session_state.get("contact_pill")
         descricao = st.session_state.get("description_input", "Nenhuma")

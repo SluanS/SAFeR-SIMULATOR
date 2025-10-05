@@ -22,12 +22,9 @@ def formatarClientes(dicionaryList):
 
 
 
-def sendRequest(TransacaoPayLoad:dict):
-    requests.post(url="http://localhost:8080/transacoes", data=TransacaoPayLoad)
-
-ContasCliente = getAllAccounts()
-
-# clientes = {"Jennifer":{"numConta":"02312540","cpf":"002025","ispb":bancos_ispb["Agibank"],"numAgencia":"1254"}}
-
-clientes = formatarClientes(ContasCliente)
-print(clientes.keys())
+def sendRequest(TransacaoPayLoad):
+    payload = dict(TransacaoPayLoad)
+    print(payload)
+    requests.post(url="http://localhost:8080/transacoes", json=payload)
+    print("Requisição enviada com sucesso!")
+    
