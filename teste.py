@@ -92,9 +92,6 @@ def delta_button_method():
     with st.popover("🛠"):
         st.subheader("PayLoad API")
         # Foi necessário usar chaves fixas ou o valor do input em si para evitar o erro de 'key must be unique'
-        data = st.date_input(label="Data da transação", format="DD/MM/YYYY", value="2025-10-04", max_value="today",key="meta_data_hora",min_value=datetime.date(2000, 1, 1)).strftime("%Y-%m-%d")
-        hora = st.time_input(label="Horário da transação:",value=datetime.time(12,0), key="meta_hora").strftime("%H:%M:%S")
-        local = st.selectbox(label="Local da transação: ", options=estados_brasil.keys(),placeholder="Selecione o estado de origem",)
         st.subheader("Dispositivo")
         dispositivo = st.selectbox("Modelo do dispositivo", options=["MOBILE","DESKTOP","AUTO_ATENDIMENTO"], key="meta_modelo_dispositivo")
         
@@ -105,13 +102,16 @@ def delta_button_method():
                            Nº conta: {clientes[cliente]["numConta"]}\n
                            Agencia: {clientes[cliente]["numAgencia"]}\n
                            Chave: {clientes[cliente]["ispb"]}""")
+        st.subheader("Informações gerais")
+        data = st.date_input(label="Data da transação", format="DD/MM/YYYY", value="2025-10-04", max_value="today",key="meta_data_hora",min_value=datetime.date(2000, 1, 1)).strftime("%Y-%m-%d")
+        hora = st.time_input(label="Horário da transação:",value=datetime.time(12,0), key="meta_hora").strftime("%H:%M:%S")
+        local = st.selectbox(label="Local da transação: ", options=estados_brasil.keys(),placeholder="Selecione o estado de origem",)
 
         st.subheader("Destinatário")
         destinatario = st.selectbox(label="Digite a chave pix: ", options=DESTINATIONS_DATA.keys(), key="destination_key")
 
         # O botão Salvar Metadados não precisa de uma chave aleatória se for único dentro do popover
         if st.button("Salvar Metadados", key="salvar_metadados_btn"):
-            st.session_state.clear()
             st.session_state["pix_meta"] = {
                 "dataHoraOperacao": data + "T" + hora,
                 #Longitude - latitude
@@ -126,6 +126,7 @@ def delta_button_method():
                 "ispbDestino": DESTINATIONS_DATA[destinatario]["ispb_destino"],
                 "cpfCnpjDestino": DESTINATIONS_DATA[destinatario]["cpf"],
                 "meioPagamento": "PIX",
+                "conta" : clientes[cliente]["numConta"]
             
             }
 
