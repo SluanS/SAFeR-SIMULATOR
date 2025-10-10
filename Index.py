@@ -179,7 +179,7 @@ def create_destinations_container(destinations_data):
                       key="description_input")
 
 
-@st.dialog(title="Processando pagamento", width="large")
+@st.dialog(title="Processando pagamento", width="small")
 def processing_dialog():
     if st.session_state.get("pix_value") > 0:
         st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value", 0.0)
@@ -216,37 +216,48 @@ def processing_dialog():
         st.markdown("---")
 
         with st.spinner("Aguarde, estamos processando...", show_time=True):
-            time.sleep(3)  # Simula o tempo de processamento
+            time.sleep(2)  # Simula o tempo de processamento
 
-        numero = random.randint(1, 100)
 
         if response["scoreTransacao"] < 50:
-            st.success("Transação aceita com sucesso! 🎉")
-            st.markdown(
-                """
-                <div style="text-align: center; font-size: 100px; color: green; margin-top: 20px;">
-                    ✔
+         st.markdown("""
+                <div style="
+                    background-color:#e6fff2;
+                    color:#006633;
+                    border-radius:15px;
+                    padding:30px;
+                    text-align:center;
+                    font-family: 'Segoe UI', sans-serif;
+                    box-shadow: 0 0 15px rgba(0,102,51,0.3);
+                ">
+                    <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" width="120"/>
+                    <h1 style="margin-top:10px;">✅ Transação Aprovada!</h1>
+                    <p style="font-size:18px; margin-top:10px;">
+                        Sua operação foi concluída com sucesso.
+                    </p>
+                    <p style="font-size:14px; color:#004d26;">
+                        Obrigado por utilizar nossos serviços. Você pode realizar outra transação ou voltar à página inicial.
+                    </p>
                 </div>
-                <div style="text-align: center; font-size: 36px; color: green; font-weight: bold;">
-                    Transação Aceita!
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            """, unsafe_allow_html=True)
         else:
-            st.error("Transação negada. ❌")
-            st.markdown(
-                """
-                <div style="text-align: center; font-size: 100px; color: red; margin-top: 20px;">
-                    ❌
+         st.markdown("""
+                <div style="
+                    background-color:#ffe6e6;
+                    color:#b30000;
+                    border-radius:15px;
+                    padding:25px;
+                    text-align:center;
+                    font-family: 'Segoe UI', sans-serif;
+                    box-shadow: 0 0 10px rgba(255,0,0,0.3);
+                ">
+                    <img src="https://cdn-icons-png.flaticon.com/512/463/463612.png" width="100" style="margin-bottom:15px;"/>
+                    <h2>🚫 Transação Negada</h2>
+                    <p>O sistema detectou uma inconsistência e não pôde completar sua operação.</p>
+                    <p style="font-size: 14px; color:#660000;">
+                    Contate o banco para mais informações.</p>
                 </div>
-                <div style="text-align: center; font-size: 36px; color: red; font-weight: bold;">
-                    Transação Negada!
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        st.write(st.session_state["pix_meta"])
+            """, unsafe_allow_html=True)
     else:
         st.warning("Digite o valor da transação!")
 
