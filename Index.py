@@ -155,11 +155,37 @@ def create_destinations_container(destinations_data):
         chaves = []
         for contato in destinations_data.values():
             chaves.append(contato["pix_key"])
-        chave_pix = st.selectbox(label="Digite a chave pix: ", options=chaves, key="pix_key_input")
+        chave_pix = st.text_input(label="Digite a chave pix: ", value="", key="pix_key_input", placeholder="Chave Pix (E-mail, CPF, CNPJ, Celular ou EVP)", help="Preencha o campo diretamente ou escolha um contato frequente")
 
         # CHAVE FIXA para acesso: st.session_state["contact_pill"]
         contato = st.pills(label="Contatos frequentes: ", options=destinations_data.keys(), key="contact_pill")
 
+        if chave_pix:
+            chavesExistentes = []
+            for k, v in destinations_data.items():
+                chavesExistentes.append(v["pix_key"])
+            if chave_pix not in chavesExistentes:
+                st.info("Chaves pix inexistente")
+            else:
+                contatoExistente = None
+                for k, v in destinations_data.items():
+                    if v["pix_key"] == chave_pix:
+                        contatoExistente = {k:v}
+                        print("Contto existente: ")
+                        print(contatoExistente)
+                        print("Keys:")
+                        print(contatoExistente.keys())
+                        break
+                contatoExistente = list(contatoExistente.keys())
+                st.session_state["pix_meta"]["numContaDestino"] = destinations_data[contatoExistente[0]]["conta"]
+                st.session_state["pix_meta"]["numAgenciaDestino"] = destinations_data[contatoExistente[0]]["agencia"]
+                st.session_state["pix_meta"]["ispbDestino"] = destinations_data[contatoExistente[0]]["ispb_destino"]
+                st.session_state["pix_meta"]["cpfCnpjDestino"] = destinations_data[contatoExistente[0]]["cpf"]
+                with st.expander(f"Dados do contato selecionado: {contatoExistente[0]}"):
+                    st.success(f"""
+                            Nº conta: {destinations_data[contatoExistente[0]]["conta"]}\n
+                            Agencia: {destinations_data[contatoExistente[0]]["agencia"]}\n
+                            Chave: {destinations_data[contatoExistente[0]]["pix_key"]}""")
         # Exibir dados do contato selecionado
         if contato:
             st.session_state["pix_meta"]["numContaDestino"] = destinations_data[contato]["conta"]
