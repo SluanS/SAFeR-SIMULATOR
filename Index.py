@@ -48,7 +48,7 @@ DESTINATIONS_DATA = {
     "Henrique": {"conta": "555.323.333.44", "agencia": "452", "pix_key": "chavePixHenrique","ispb_destino":bancos_ispb["Nubank"],"cpf":"55845"},
     "Pietra": {"conta": "111.222.333.44", "agencia": "492", "pix_key": "chavePixPietra","ispb_destino":bancos_ispb["Santander"],"cpf":"55845"},
     "Michel": {"conta": "333.888.333.44", "agencia": "492", "pix_key": "chavePixMichel","ispb_destino":bancos_ispb["Itaú Unibanco"],"cpf":"55845"},
-    "João": {"conta": "111.444.333.44", "agencia": "892", "pix_key": "chavePixJoao","ispb_destino":bancos_ispb["Banco XP"],"cpf":"55845"}
+    "João": {"conta": "111.444.333.44", "agencia": "892", "pix_key": "chavePixJoao","ispb_destino":bancos_ispb["Banco XP"],"cpf":"12345678901"}
 }
 estados_brasil = {
     "Acre": {"latitude": -9.97499, "longitude": -67.8243},            # Rio Branco
@@ -107,8 +107,8 @@ def delta_button_method():
         hora = st.time_input(label="Horário da transação:",value=datetime.time(12,0), key="meta_hora").strftime("%H:%M:%S")
         local = st.selectbox(label="Local da transação: ", options=estados_brasil.keys(),placeholder="Selecione o estado de origem",)
 
-        st.subheader("Destinatário")
-        destinatario = st.selectbox(label="Digite a chave pix: ", options=DESTINATIONS_DATA.keys(), key="destination_key")
+        #st.subheader("Destinatário")
+        #destinatario = st.selectbox(label="Digite a chave pix: ", options=DESTINATIONS_DATA.keys(), key="destination_key")
 
         # O botão Salvar Metadados não precisa de uma chave aleatória se for único dentro do popover
         if st.button("Salvar Metadados", key="salvar_metadados_btn"):
@@ -121,10 +121,10 @@ def delta_button_method():
                 "numAgenciaOrigem": clientes[cliente]["numAgencia"],
                 "ispbOrigem": clientes[cliente]["ispb"],
                 "cpfOrigem": clientes[cliente]["cpf"],
-                "numContaDestino": DESTINATIONS_DATA[destinatario]["conta"],
-                "numAgenciaDestino": DESTINATIONS_DATA[destinatario]["agencia"],
-                "ispbDestino": DESTINATIONS_DATA[destinatario]["ispb_destino"],
-                "cpfCnpjDestino": DESTINATIONS_DATA[destinatario]["cpf"],
+                #"numContaDestino": DESTINATIONS_DATA[destinatario]["conta"],
+                #"numAgenciaDestino": DESTINATIONS_DATA[destinatario]["agencia"],
+                #"ispbDestino": DESTINATIONS_DATA[destinatario]["ispb_destino"],
+                #"cpfCnpjDestino": DESTINATIONS_DATA[destinatario]["cpf"],
                 "meioPagamento": "PIX",
                 "conta" : clientes[cliente]["numConta"]
             
@@ -155,37 +155,12 @@ def create_destinations_container(destinations_data):
         chaves = []
         for contato in destinations_data.values():
             chaves.append(contato["pix_key"])
-        chave_pix = st.text_input(label="Digite a chave pix: ", value="", key="pix_key_input", placeholder="Chave Pix (E-mail, CPF, CNPJ, Celular ou EVP)", help="Preencha o campo diretamente ou escolha um contato frequente")
+        chave_pix = st.text_input(label="Digite a chave pix: ", key="pix_key_input",
+                                  placeholder="Ex: email, telefone, cpf ou chave aleatória",help="Você pode digitar uma chave Pix ou selecionar um contato frequente abaixo.")
 
         # CHAVE FIXA para acesso: st.session_state["contact_pill"]
         contato = st.pills(label="Contatos frequentes: ", options=destinations_data.keys(), key="contact_pill")
 
-        if chave_pix:
-            chavesExistentes = []
-            for k, v in destinations_data.items():
-                chavesExistentes.append(v["pix_key"])
-            if chave_pix not in chavesExistentes:
-                st.info("Chaves pix inexistente")
-            else:
-                contatoExistente = None
-                for k, v in destinations_data.items():
-                    if v["pix_key"] == chave_pix:
-                        contatoExistente = {k:v}
-                        print("Contto existente: ")
-                        print(contatoExistente)
-                        print("Keys:")
-                        print(contatoExistente.keys())
-                        break
-                contatoExistente = list(contatoExistente.keys())
-                st.session_state["pix_meta"]["numContaDestino"] = destinations_data[contatoExistente[0]]["conta"]
-                st.session_state["pix_meta"]["numAgenciaDestino"] = destinations_data[contatoExistente[0]]["agencia"]
-                st.session_state["pix_meta"]["ispbDestino"] = destinations_data[contatoExistente[0]]["ispb_destino"]
-                st.session_state["pix_meta"]["cpfCnpjDestino"] = destinations_data[contatoExistente[0]]["cpf"]
-                with st.expander(f"Dados do contato selecionado: {contatoExistente[0]}"):
-                    st.success(f"""
-                            Nº conta: {destinations_data[contatoExistente[0]]["conta"]}\n
-                            Agencia: {destinations_data[contatoExistente[0]]["agencia"]}\n
-                            Chave: {destinations_data[contatoExistente[0]]["pix_key"]}""")
         # Exibir dados do contato selecionado
         if contato:
             st.session_state["pix_meta"]["numContaDestino"] = destinations_data[contato]["conta"]
@@ -206,11 +181,11 @@ def create_destinations_container(destinations_data):
 
 @st.dialog(title="Processando pagamento", width="large")
 def processing_dialog():
-    if st.session_state.get("pix_value") > 0 and st.session_state.get("pix_key_input") != None:
+    if st.session_state.get("pix_value") > 0:
         st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value", 0.0)
         valor_pix = st.session_state.get("pix_value", 0.0)
         payload = st.session_state["pix_meta"]
-        SaferRequets.sendRequest(payload)
+        response = SaferRequets.sendRequest(payload)
         # st.session_state["pix_meta"]["valor"] = st.session_state.get("pix_value",0.0)
         
         chave_pix_digitada = st.session_state.get("pix_key_input", "Não preenchida")
@@ -245,7 +220,7 @@ def processing_dialog():
 
         numero = random.randint(1, 100)
 
-        if numero % 2 == 0:
+        if response["scoreTransacao"] < 50:
             st.success("Transação aceita com sucesso! 🎉")
             st.markdown(
                 """

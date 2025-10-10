@@ -16,15 +16,14 @@ def formatarClientes(dicionaryList):
                                                     "cpf":cliente["cliente"]["cpf"],
                                                     "ispb":cliente["ispb"],
                                                     "numAgencia":cliente["numAgencia"]}
-        print(clientesFormatado)
-        print("                ")
+  
     return clientesFormatado;
-
 
 
 def sendRequest(TransacaoPayLoad):
     payload = dict(TransacaoPayLoad)
     print(payload)
-    requests.post(url="http://localhost:8080/transacoes", json=payload)
+    response = requests.post(url="http://localhost:8080/transacoes/cria_valida", json=payload).json()
     print("Requisição enviada com sucesso!")
-    
+    print(response)
+    return response
